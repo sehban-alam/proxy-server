@@ -63,6 +63,38 @@ const FUND_META = {
 	uk: 'Збір коштів',
 };
 
+const ALT_LOCALES = [
+	'nl-nl',
+	'en-en',
+	'es-es',
+	'de-de',
+	'fr-fr',
+	'nl-be',
+	'fr-be',
+	'fr-ch',
+	'de-ch',
+	'en',
+	'en-dk',
+	'en-ie',
+	'en-no',
+	'en-se',
+	'en-gb',
+	'bg-bg',
+	'hr-hr',
+	'cs-cz',
+	'da-dk',
+	'fi-fi',
+	'el-el',
+	'hu-hu',
+	'it-it',
+	'pl-pl',
+	'pt-pt',
+	'ro-ro',
+	'sk-sk',
+	'sv-se',
+	'uk-ua',
+];
+
 async function handleRequest(request, env) {
 	let url = new URL(request.url);
 
@@ -226,7 +258,15 @@ var src_default = {
 	},
 };
 
-function TransformMetaTags(response, meta_tags, twitter_meta, og_meta, domain) {
+function TransformMetaTags(
+	response,
+	meta_tags,
+	twitter_meta,
+	og_meta,
+	domain,
+	languageCode,
+	url
+) {
 	let AddedMetaTagsRes = new HTMLRewriter()
 		// Replace or update the meta tags in the <head> section
 		.on('title', {
@@ -291,18 +331,24 @@ function TransformMetaTags(response, meta_tags, twitter_meta, og_meta, domain) {
 		})
 		.transform(response);
 
-	let addedAlternateLinksRes = new HTMLRewriter()
-		.on('link[rel="alternate"]', {
-			element(element) {				
-				element.setAttribute('href', 'https://' + domain + '/');
-			},
-		})
-		.transform(AddedMetaTagsRes);
+	let addedAlternateLinksRes = ALT_LOCALES.forEach((locale) => {
+		new HTMLRewriter()
+			.on('link[rel="alternate"]', {
+				element(element) {
+					element.setAttribute('hreflang', locale);
+					element.setAttribute(
+						'href',
+						'https://' + domain + '/' + locale.substring(0, 2),
+					);
+				},
+			})
+			.transform(AddedMetaTagsRes);
+	});
 
 	let addedCanonicalLinksRes = new HTMLRewriter()
 		.on('link[rel="canonical"]', {
 			element(element) {
-				element.setAttribute('href', 'https://whydonate.cc/');
+				element.setAttribute('href', url);
 			},
 		})
 		.transform(addedAlternateLinksRes);
@@ -402,8 +448,24 @@ function createMetaTags(title, description, image, domain, url) {
 }
 
 // Helper function to transform meta tags
-function transformMetaTags(response, metaTags, twitterMeta, ogMeta, domain) {
-	return TransformMetaTags(response, metaTags, twitterMeta, ogMeta, domain);
+function transformMetaTags(
+	response,
+	metaTags,
+	twitterMeta,
+	ogMeta,
+	domain,
+	languageCode,
+	url
+) {
+	return TransformMetaTags(
+		response,
+		metaTags,
+		twitterMeta,
+		ogMeta,
+		domain,
+		languageCode,
+		url
+	);
 }
 
 // Handler for fetching and transforming home page metadata
@@ -449,6 +511,8 @@ async function handleHomePage(url, request, langs) {
 		twitterMeta,
 		ogMeta,
 		domain,
+		languageCode,
+		url
 	);
 }
 
