@@ -1,6 +1,6 @@
 // src/index.js
-var SITEURL = 'whydonate.cc';
-var WP_HOST = 'wp.whydonate.com';
+var SITEURL = 'whydonate.in';
+var WP_HOST = 'wp.whydonate.in';
 var langs = /* @__PURE__ */ new Set([
 	'/nl',
 	'/be',
@@ -108,10 +108,10 @@ async function handleRequest(request, env) {
 
 		// JS and CSS file handling
 		if (pathname.includes('.js') || pathname.includes('.css')) {
-			return fetchContent(`https://whydonate.cc${pathname}`, request);
+			return fetchContent(`https://whydonate.in${pathname}`, request);
 		}
 
-		// Home page handling
+		// Home page handling with Locale/lang only
 		if (
 			(langs.has(pathname) && pathname.endsWith('')) ||
 			(langs.has(pathname.substring(0, 3)) && pathname.length <= 4)
@@ -128,7 +128,7 @@ async function handleRequest(request, env) {
 		if (langs.has(lang) && pathsToRedirect.has(path)) {
 			const domain = url.hostname;
 			const response = await fetchContent(
-				`https://whydonate.cc${pathname}`,
+				`https://whydonate.in${pathname}`,
 				request,
 			);
 
@@ -136,6 +136,11 @@ async function handleRequest(request, env) {
 				.on('meta[property="og:url"]', {
 					element(element) {
 						element.setAttribute('content', `https://${domain}${pathname}`);
+					},
+				})
+				.on('link[rel="canonical"]', {
+					element(element) {
+						element.setAttribute('href', url);
 					},
 				})
 				.transform(response);
@@ -146,7 +151,7 @@ async function handleRequest(request, env) {
 		}
 
 		// Default handler
-		const response = await fetchContent(`https://whydonate.cc/en/`, request);
+		const response = await fetchContent(`https://whydonate.in/en/`, request);
 		return new HTMLRewriter()
 			.on('meta[property="og:url"]', {
 				element(element) {
@@ -265,7 +270,9 @@ function TransformMetaTags(
 	og_meta,
 	domain,
 	languageCode,
-	url
+	url,
+	isCustomHome,
+	customFundName
 ) {
 	let AddedMetaTagsRes = new HTMLRewriter()
 		// Replace or update the meta tags in the <head> section
@@ -331,27 +338,185 @@ function TransformMetaTags(
 		})
 		.transform(response);
 
-	let addedAlternateLinksRes = ALT_LOCALES.forEach((locale) => {
-		new HTMLRewriter()
-			.on('link[rel="alternate"]', {
+	let addedAlternateLinksRes = new HTMLRewriter()
+		.on('link[rel="alternate"][hreflang="nl-nl"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/nl/');
+			},
+		})
+		.on('link[rel="alternate"][hreflang="en-en"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/en/');
+			},
+		})
+		.on('link[rel="alternate"][hreflang="es-es"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/es/');
+			},
+		})
+		.on('link[rel="alternate"][hreflang="de-de"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/de/');
+			},
+		})
+		.on('link[rel="alternate"][hreflang="fr-fr"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/fr/');
+			},
+		})
+		.on('link[rel="alternate"][hreflang="nl-be"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/nl/');
+			},
+		})
+		.on('link[rel="alternate"][hreflang="fr-be"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/fr/');
+			},
+		})
+		.on('link[rel="alternate"][hreflang="fr-ch"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/fr/');
+			},
+		})
+		.on('link[rel="alternate"][hreflang="de-ch"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/de/');
+			},
+		})
+		.on('link[rel="alternate"][hreflang="en"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/en/');
+			},
+		})
+		.on('link[rel="alternate"][hreflang="en-dk"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/en/');
+			},
+		})
+		.on('link[rel="alternate"][hreflang="en-ie"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/en/');
+			},
+		})
+		.on('link[rel="alternate"][hreflang="en-no"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/en/');
+			},
+		})
+		.on('link[rel="alternate"][hreflang="en-se"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/en/');
+			},
+		})
+		.on('link[rel="alternate"][hreflang="en-gb"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/en/');
+			},
+		})
+		.on('link[rel="alternate"][hreflang="bg-bg"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/bg/');
+			},
+		})
+		.on('link[rel="alternate"][hreflang="hr-hr"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/hr/');
+			},
+		})
+		.on('link[rel="alternate"][hreflang="cs-cz"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/cs/');
+			},
+		})
+		.on('link[rel="alternate"][hreflang="da-dk"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/da/');
+			},
+		})
+		.on('link[rel="alternate"][hreflang="fi-fi"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/fi/');
+			},
+		})
+		.on('link[rel="alternate"][hreflang="el-el"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/el/');
+			},
+		})
+		.on('link[rel="alternate"][hreflang="hu-hu"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/hu/');
+			},
+		})
+		.on('link[rel="alternate"][hreflang="it-it"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/it/');
+			},
+		})
+		.on('link[rel="alternate"][hreflang="pl-pl"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/pl/');
+			},
+		})
+		.on('link[rel="alternate"][hreflang="pt-pt"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/pt/');
+			},
+		})
+		.on('link[rel="alternate"][hreflang="ro-ro"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/ro/');
+			},
+		})
+		.on('link[rel="alternate"][hreflang="sk-sk"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/sk/');
+			},
+		})
+		.on('link[rel="alternate"][hreflang="sv-se"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/sv/');
+			},
+		})
+		.on('link[rel="alternate"][hreflang="uk-ua"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/uk/');
+			},
+		})
+		.on('link[rel="alternate"][hreflang="x-default"]', {
+			element(element) {
+				element.setAttribute('href', 'https://' + domain + '/en/');
+			},
+		})
+		.transform(AddedMetaTagsRes);
+
+	let addedCanonicalLinksRes;
+	if (isCustomHome) {
+		addedCanonicalLinksRes = new HTMLRewriter()
+			.on('link[rel="canonical"]', {
 				element(element) {
-					element.setAttribute('hreflang', locale);
+					element.setAttribute('href', url);
+				},
+			})
+			.transform(addedAlternateLinksRes);
+	} else {
+		addedCanonicalLinksRes = new HTMLRewriter()
+			.on('link[rel="canonical"]', {
+				element(element) {
 					element.setAttribute(
 						'href',
-						'https://' + domain + '/' + locale.substring(0, 2),
+						'https://' +
+							SITEURL +
+							'/' +
+							languageCode +
+							'/fundraising/' +
+							customFundName,
 					);
 				},
 			})
-			.transform(AddedMetaTagsRes);
-	});
-
-	let addedCanonicalLinksRes = new HTMLRewriter()
-		.on('link[rel="canonical"]', {
-			element(element) {
-				element.setAttribute('href', url);
-			},
-		})
-		.transform(addedAlternateLinksRes);
+			.transform(addedAlternateLinksRes);
+	}
 
 	return addedCanonicalLinksRes;
 }
@@ -369,7 +534,7 @@ async function getUserIdFromDomain(domain) {
 	}
 
 	// Define the API URL dynamically based on the provided domain
-	const API_URL = `https://customdomain-master.whydonate.dev/custom_domain/verification?domain=${domain}`;
+	const API_URL = `https://customdomain-staging.whydonate.dev/custom_domain/verification?domain=${domain}`;
 
 	try {
 		// Perform the API call
@@ -382,6 +547,8 @@ async function getUserIdFromDomain(domain) {
 
 		// Parse the JSON response
 		const data = await response.json();
+
+		console.log(data);
 
 		// Check if the expected data is in the response
 		if (data && data.data && data.data.id) {
@@ -397,7 +564,7 @@ async function getUserIdFromDomain(domain) {
 }
 
 async function getCustomDomainData(user_id, language_code) {
-	const API_URL = `https://fundraiser-master.whydonate.dev/custom-domain/data?user_id=${user_id}&language=${language_code}`;
+	const API_URL = `https://fundraiser-staging.whydonate.dev/custom-domain/data?user_id=${user_id}&language=${language_code}`;
 
 	const response = await fetch(API_URL);
 
@@ -455,7 +622,9 @@ function transformMetaTags(
 	ogMeta,
 	domain,
 	languageCode,
-	url
+	url,
+	isCustomHome,
+	customFundName
 ) {
 	return TransformMetaTags(
 		response,
@@ -464,14 +633,16 @@ function transformMetaTags(
 		ogMeta,
 		domain,
 		languageCode,
-		url
+		url,
+		isCustomHome,
+		customFundName
 	);
 }
 
 // Handler for fetching and transforming home page metadata
 async function handleHomePage(url, request, langs) {
 	let domain = url.hostname;
-	//domain = 'support.coop-africa.org';
+	domain = 'niels.whydonate.net';
 	let languageCode = 'en';
 	if (langs.has(url.pathname.substring(0, 3))) {
 		languageCode = url.pathname.substring(1, 3);
@@ -488,7 +659,7 @@ async function handleHomePage(url, request, langs) {
 	if (isCustomHome) {
 		title = `${FUND_META[languageCode]} | ${customDomainData.custom_home_data.customData.name}`;
 		description = customDomainData.custom_home_data.customData.description;
-		imageUrl = `https://whydonate.com/cdn-cgi/imagedelivery/_0vgnXOEIHPwLg2E52a7gg/${customDomainData.custom_home_data.customData.image}/public`;
+		imageUrl = `https://whydonate.in/cdn-cgi/imagedelivery/_0vgnXOEIHPwLg2E52a7gg/${customDomainData.custom_home_data.customData.image}/public`;
 	} else if (isFundraiserHome) {
 		title = customDomainData.fundraiser_data.fudraiserDetails.title;
 		description = customDomainData.fundraiser_data.description.description;
@@ -506,13 +677,15 @@ async function handleHomePage(url, request, langs) {
 		url.pathname,
 	);
 	return transformMetaTags(
-		await fetchContent(`https://whydonate.cc${url.pathname}`, request),
+		await fetchContent(`https://whydonate.in${url.pathname}`, request),
 		metaTags,
 		twitterMeta,
 		ogMeta,
 		domain,
 		languageCode,
-		url
+		url,
+		isCustomHome,
+		customDomainData.fundraiser_data.fudraiserDetails.title
 	);
 }
 
@@ -520,7 +693,7 @@ async function handleHomePage(url, request, langs) {
 async function handleFundraisingPages(url, request, lang, pathsToRedirect) {
 	const domain = url.hostname;
 	const response = await fetchContent(
-		`https://whydonate.cc/en${url.pathname}`,
+		`https://whydonate.in/en${url.pathname}`,
 		request,
 	);
 
