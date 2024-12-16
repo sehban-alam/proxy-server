@@ -1,16 +1,6 @@
-/**
- * Welcome to Cloudflare Workers! This is your first worker.
- *
- * - Run `npm run dev` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run `npm run deploy` to publish your worker
- *
- * Learn more at https://developers.cloudflare.com/workers/
- */
-
 // src/index.js
-var SITEURL = 'whydonate.work';
-var WP_HOST = 'wp.whydonate.in';
+var SITEURL = 'whydonate.cc';
+var WP_HOST = 'wp.whydonate.com';
 var langs = /* @__PURE__ */ new Set([
 	'/nl',
 	'/be',
@@ -33,46 +23,74 @@ var langs = /* @__PURE__ */ new Set([
 	'/sv',
 	'/uk',
 ]);
+
 var pathsToRedirect = /* @__PURE__ */ new Set([
-	'/account',
-	'/fundraising',
-	'/donate',
-	'/search',
-	'/user',
-	'/dashboard',
-	'/profile',
-	'/my-fundraisers',
-	'/custom-branding',
-	'/organisation',
-	'/donations',
-	'/custom-domain',
+	"/account",
+	"/fundraising",
+	"/donate",
+	"/search",
+	"/user",
+	"/dashboard",
+	"/profile",
+	"/my-fundraisers",
+	"/custom-branding",
+	"/organisation",
+	"/custom-domain",
+	"/balance",
+	"/donations"
 ]);
+
+const FUND_META = {
+	nl: 'Inzamelingsactie',
+	be: 'Фандрайзінг',
+	de: 'Spendenaktion',
+	fr: 'Levée de fonds',
+	es: 'Recaudar fondos',
+	en: 'Fundraising',
+	ro: 'Strângere de fonduri',
+	pt: 'Arrecadação de fundos',
+	pl: 'Zbiórka środków',
+	it: 'Raccolta fondi',
+	hu: 'Pénzgyűjtés',
+	el: 'Χρηματοδότηση',
+	hr: 'Sakupljanje sredstava',
+	bg: 'Събиране на средства',
+	fi: 'Varainkeruu',
+	cs: 'Sbírání finančních prostředků',
+	da: 'Indsamling af midler',
+	sk: 'Zbieranie finančných prostriedkov',
+	sv: 'Insamling',
+	uk: 'Збір коштів',
+};
+
 async function handleRequest(request, env) {
 	let url = new URL(request.url);
+
 	if (url.hostname === `www.` + SITEURL) {
 		url.hostname = SITEURL;
 		return Response.redirect(url.toString(), 301);
 	}
 	//Condition for custom domain
 	if (url.hostname !== SITEURL) {
+		
 		// Code For JS CSS FILES
 		if (url.pathname.includes('.js') || url.pathname.includes('.css')) {
-			const response = await fetch(`https://whydonate.work${url.pathname}`, request);
+			const response = await fetch(`https://whydonate.cc${url.pathname}`, request);
 			return response;
 		}
 
+		// FOR HOME PAGE WITH LANG ONLY
 		if ((langs.has(url.pathname) && url.pathname.endsWith('')) || (langs.has(url.pathname.substring(0, 3)) && url.pathname.length <= 4)) {
-			let response = await fetch(`https://whydonate.work${url.pathname}`, request);
+			let response = await fetch(`https://whydonate.cc${url.pathname}`, request);
 
 			try {
-				// EXTRACT DOMAIN NAME
-				let domain = url.hostname;
-				//domain = 'alam.whydonate.net';
+				console.log('HOME COND with lang')
+				// EXTRACT domain NAME
+				let domain;
+				domain = url.hostname;
 
-				console.log('HOSTNAME: ', domain);
-
-				// FETCH CUSTOM DOMAIN META TAGS FROM API
-				let user_id = 0;
+				// FETCH CUSTOM domain META TAGS FROM API
+				let user_id;
 				let custom_domain_data = {};
 				let is_custom_home = false;
 				let is_fundraiser_home = false;
@@ -83,13 +101,9 @@ async function handleRequest(request, env) {
 				// Retreve custom domain data
 				if (langs.has(url.pathname.substring(0, 3))) {
 					language_code = url.pathname.substring(1, 3);
-					console.log('LANGUAGE CODE:', language_code);
 				}
 
 				custom_domain_data = await getCustomDomainData(user_id, language_code);
-
-				console.log(`USER ID: ${user_id}`);
-				console.log(`CUSTOM DOMAIN DATA: `, custom_domain_data);
 
 				is_custom_home = custom_domain_data.is_custom_home;
 				is_fundraiser_home = custom_domain_data.is_fundraiser_home;
@@ -97,9 +111,9 @@ async function handleRequest(request, env) {
 				let title, description, image_url, meta_tags, twitter_meta, og_meta;
 
 				if (is_custom_home) {
-					title = custom_domain_data.custom_home_data.customData.name;
+					title = FUND_META[language_code] + ' | ' + custom_domain_data.custom_home_data.customData.name;
 					description = custom_domain_data.custom_home_data.customData.description;
-					image_url = `https://whydonate.in/cdn-cgi/imagedelivery/_0vgnXOEIHPwLg2E52a7gg/${custom_domain_data.custom_home_data.customData.image}/public`;
+					image_url = `https://whydonate.cc/cdn-cgi/imagedelivery/_0vgnXOEIHPwLg2E52a7gg/${custom_domain_data.custom_home_data.customData.image}/public`;
 
 					meta_tags = {
 						title: title,
@@ -123,9 +137,8 @@ async function handleRequest(request, env) {
 						image: image_url,
 					};
 
-					return TransformMetaTags(response, meta_tags, twitter_meta, og_meta);
+					return TransformMetaTags(response, meta_tags, twitter_meta, og_meta, domain);
 				} else if (is_fundraiser_home) {
-					console.log('FUND HOME');
 					title = custom_domain_data.fundraiser_data.fudraiserDetails.title;
 					description = custom_domain_data.fundraiser_data.description.description;
 					image_url = custom_domain_data.fundraiser_data.fudraiserDetails.background.image;
@@ -159,20 +172,75 @@ async function handleRequest(request, env) {
 			}
 		}
 
+		// FOR FUNDRAISING AND DONATIONS
 		const pathParts2 = url.pathname.split('/');
 		const lang2 = '/' + pathParts2[1];
 		let path2 = '/' + pathParts2[2];
 		if (langs.has(lang2) && pathsToRedirect.has(path2)) {
-			return await fetch(`https://whydonate.work${url.pathname}`, request);
+			console.log("COND 2")
+
+			let response = await fetch(`https://whydonate.cc${url.pathname}`, request);
+
+			try {
+				// EXTRACT domain NAME
+				let domain;
+			    domain = url.hostname;
+
+				return new HTMLRewriter().on('meta[property="og:url"]', {
+					element(element) {
+						element.setAttribute('content', 'https://'+domain+url.pathname);
+					},
+				}).transform(response);			
+
+				
+			} catch (error) {
+				return response;
+			}
+			
 		}
+
 		path2 = '/' + pathParts2[1];
+
+		// FOR FUNDRAISING PAGES
 		if (pathsToRedirect.has(path2)) {
-			return await fetch(`https://whydonate.work/en${url.pathname}`, request);
+			console.log("COND 3")
+			let response = await fetch(`https://whydonate.cc/en${url.pathname}`, request);
+
+			try {
+				// EXTRACT domain NAME
+				let domain;
+			    domain = url.hostname;
+
+				return new HTMLRewriter().on('meta[property="og:url"]', {
+					element(element) {
+						element.setAttribute('content', 'https://'+domain+url.pathname);
+					},
+				}).transform(response);			
+
+				
+			} catch (error) {
+				return response;
+			}
 		}
 
-		const resp = await fetch(`https://whydonate.work/en/`, request);
+		console.log("COND DEFAULT")
+		const response = await fetch(`https://whydonate.cc/en/`, request);
 
-		return resp;
+		try {
+			// EXTRACT domain NAME
+			let domain;
+			domain = url.hostname;
+
+			return new HTMLRewriter().on('meta[property="og:url"]', {
+				element(element) {
+					element.setAttribute('content', 'https://'+domain+url.pathname);
+				},
+			}).transform(response);			
+
+			
+		} catch (error) {
+			return response;
+		}
 	}
 	if (!url.pathname.includes('wp') && (url.pathname.includes('.js') || url.pathname.includes('.css'))) {
 		return await fetch(request);
@@ -197,7 +265,7 @@ async function handleRequest(request, env) {
 		return await fetch(request);
 	}
 	path = '/' + pathParts[1];
-	if (pathsToRedirect.has(path)) {
+	if (pathsToRedirect.has(path) || pathParts[1].includes('sitemap') || pathParts[1] === 'robots.txt') {
 		return await fetch(request);
 	}
 	return handleBlog(request);
@@ -253,7 +321,7 @@ var src_default = {
 	},
 };
 
-function TransformMetaTags(response, meta_tags, twitter_meta, og_meta) {
+function TransformMetaTags(response, meta_tags, twitter_meta, og_meta, domain) {
 	return (
 		new HTMLRewriter()
 			// Replace or update the meta tags in the <head> section
@@ -262,7 +330,16 @@ function TransformMetaTags(response, meta_tags, twitter_meta, og_meta) {
 					element.setInnerContent(meta_tags.title);
 				},
 			})
-
+			.on('link[rel="alternate"]', {
+				element(element) {
+					element.setAttribute('href', 'https://'+domain+'/');
+				},
+			})
+			.on('link[rel="canonical"]', {
+				element(element) {
+					element.setAttribute('href', 'https://'+domain+'/');
+				},
+			})
 			.on('meta[name="description"]', {
 				element(element) {
 					element.setAttribute('content', meta_tags.description);
@@ -335,7 +412,7 @@ async function getUserIdFromDomain(domain) {
 	}
 
 	// Define the API URL dynamically based on the provided domain
-	const API_URL = `https://customdomain-staging.whydonate.dev/custom_domain/verification?domain=${domain}`;
+	const API_URL = `https://customdomain-master.whydonate.dev/custom_domain/verification?domain=${domain}`;
 
 	try {
 		// Perform the API call
@@ -363,7 +440,7 @@ async function getUserIdFromDomain(domain) {
 }
 
 async function getCustomDomainData(user_id, language_code) {
-	const API_URL = `https://fundraiser-staging.whydonate.dev/custom-domain/data?user_id=${user_id}&language=${language_code}`;
+	const API_URL = `https://fundraiser-master.whydonate.dev/custom-domain/data?user_id=${user_id}&language=${language_code}`;
 
 	const response = await fetch(API_URL);
 
