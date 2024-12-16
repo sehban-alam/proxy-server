@@ -409,7 +409,7 @@ function transformMetaTags(response, metaTags, twitterMeta, ogMeta, domain) {
 // Handler for fetching and transforming home page metadata
 async function handleHomePage(url, request, langs) {
 	let domain = url.hostname;
-	domain = 'support.coop-africa.org';
+	//domain = 'support.coop-africa.org';
 	let languageCode = 'en';
 	if (langs.has(url.pathname.substring(0, 3))) {
 		languageCode = url.pathname.substring(1, 3);
