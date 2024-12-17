@@ -1,6 +1,6 @@
 // src/index.js
-var SITEURL = 'whydonate.in';
-var WP_HOST = 'wp.whydonate.in';
+var SITEURL = 'whydonate.cc';
+var WP_HOST = 'wp.whydonate.com';
 var langs = /* @__PURE__ */ new Set([
 	'/nl',
 	'/be',
@@ -108,7 +108,7 @@ async function handleRequest(request, env) {
 
 		// JS and CSS file handling
 		if (pathname.includes('.js') || pathname.includes('.css')) {
-			return fetchContent(`https://whydonate.in${pathname}`, request);
+			return fetchContent(`https://whydonate.cc${pathname}`, request);
 		}
 
 		// Home page handling with Locale/lang only
@@ -128,7 +128,7 @@ async function handleRequest(request, env) {
 		if (langs.has(lang) && pathsToRedirect.has(path)) {
 			const domain = url.hostname;
 			const response = await fetchContent(
-				`https://whydonate.in${pathname}`,
+				`https://whydonate.cc${pathname}`,
 				request,
 			);
 
@@ -151,7 +151,7 @@ async function handleRequest(request, env) {
 		}
 
 		// Default handler
-		const response = await fetchContent(`https://whydonate.in/en/`, request);
+		const response = await fetchContent(`https://whydonate.cc/en/`, request);
 		return new HTMLRewriter()
 			.on('meta[property="og:url"]', {
 				element(element) {
@@ -534,7 +534,7 @@ async function getUserIdFromDomain(domain) {
 	}
 
 	// Define the API URL dynamically based on the provided domain
-	const API_URL = `https://customdomain-staging.whydonate.dev/custom_domain/verification?domain=${domain}`;
+	const API_URL = `https://customdomain-master.whydonate.dev/custom_domain/verification?domain=${domain}`;
 
 	try {
 		// Perform the API call
@@ -564,7 +564,7 @@ async function getUserIdFromDomain(domain) {
 }
 
 async function getCustomDomainData(user_id, language_code) {
-	const API_URL = `https://fundraiser-staging.whydonate.dev/custom-domain/data?user_id=${user_id}&language=${language_code}`;
+	const API_URL = `https://fundraiser-master.whydonate.dev/custom-domain/data?user_id=${user_id}&language=${language_code}`;
 
 	const response = await fetch(API_URL);
 
@@ -642,7 +642,7 @@ function transformMetaTags(
 // Handler for fetching and transforming home page metadata
 async function handleHomePage(url, request, langs) {
 	let domain = url.hostname;
-	domain = 'niels.whydonate.net';
+	domain = 'support.coop-africa.org';
 	let languageCode = 'en';
 	if (langs.has(url.pathname.substring(0, 3))) {
 		languageCode = url.pathname.substring(1, 3);
@@ -659,7 +659,7 @@ async function handleHomePage(url, request, langs) {
 	if (isCustomHome) {
 		title = `${FUND_META[languageCode]} | ${customDomainData.custom_home_data.customData.name}`;
 		description = customDomainData.custom_home_data.customData.description;
-		imageUrl = `https://whydonate.in/cdn-cgi/imagedelivery/_0vgnXOEIHPwLg2E52a7gg/${customDomainData.custom_home_data.customData.image}/public`;
+		imageUrl = `https://whydonate.com/cdn-cgi/imagedelivery/_0vgnXOEIHPwLg2E52a7gg/${customDomainData.custom_home_data.customData.image}/public`;
 	} else if (isFundraiserHome) {
 		title = customDomainData.fundraiser_data.fudraiserDetails.title;
 		description = customDomainData.fundraiser_data.description.description;
@@ -677,7 +677,7 @@ async function handleHomePage(url, request, langs) {
 		url.pathname,
 	);
 	return transformMetaTags(
-		await fetchContent(`https://whydonate.in${url.pathname}`, request),
+		await fetchContent(`https://whydonate.cc${url.pathname}`, request),
 		metaTags,
 		twitterMeta,
 		ogMeta,
@@ -685,7 +685,7 @@ async function handleHomePage(url, request, langs) {
 		languageCode,
 		url,
 		isCustomHome,
-		customDomainData.fundraiser_data.fudraiserDetails.title
+		title
 	);
 }
 
@@ -693,7 +693,7 @@ async function handleHomePage(url, request, langs) {
 async function handleFundraisingPages(url, request, lang, pathsToRedirect) {
 	const domain = url.hostname;
 	const response = await fetchContent(
-		`https://whydonate.in/en${url.pathname}`,
+		`https://whydonate.cc/en${url.pathname}`,
 		request,
 	);
 
